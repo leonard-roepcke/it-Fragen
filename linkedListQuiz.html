@@ -1,0 +1,244 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lernkarten-App</title><script src="https://cdn.tailwindcss.com"></script><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 2rem auto;
+            position: relative;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 2s;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .card-front {
+            background-color: #ffffff;
+            color: #1a202c;
+        }
+        .card-back {
+            background-color: #4a5568;
+            color: #ffffff;
+            transform: rotateY(180deg);
+        }
+        .marked-card-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+    </style></head><body class="bg-gray-200 text-gray-800">
+<div class="w-full max-w-2xl p-6 bg-white rounded-xl shadow-2xl">
+<div class="text-center mb-6">
+<h1 id="cardTitle" class="text-3xl font-bold mb-2">Lernkarte Nummer 1</h1>
+
+<p id="cardCount" class="text-gray-500">Karte 1 von 20</p>
+</div>
+
+<div class="card-container">
+<div id="flashcard" class="card">
+<div id="frontSide" class="card-face card-front">
+<p id="frontText" class="text-xl font-semibold">Lade...</p>
+</div>
+
+<div id="backSide" class="card-face card-back">
+<p id="backText" class="text-xl font-semibold">Lade...</p>
+</div>
+</div>
+</div>
+
+<div class="flex justify-center mt-6">
+<div class="marked-card-container"><input type="checkbox" id="learnAgainCheckbox" class="form-checkbox h-5 w-5 text-blue-600 rounded-md"><label for="learnAgainCheckbox" class="text-md font-medium text-gray-700">Nochmal lernen</label></div>
+</div>
+
+<div class="flex flex-wrap justify-center gap-4 mt-6"><button id="flipButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">Drehen</button><button id="nextButton" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">Weiter</button><button id="randomButton" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">Zufällig</button><button id="againButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">!</button></div>
+</div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Hardgecodete CSV-Daten als String
+            const csvData = `Nummer;Vorseite;Rückseite
+1; Was ist eine Linked List?; Eine Linked List ist eine Datenstruktur, die aus miteinander verketteten Knoten besteht, wobei jeder Knoten Daten und einen Verweis (Pointer) auf den nächsten Knoten enthält.
+2; Worin unterscheidet sich eine Linked List von einem Array?; Ein Array hat feste Größe und speichert Elemente in zusammenhängendem Speicher, während eine Linked List dynamisch wächst und ihre Elemente im Speicher verteilt sind.
+3; Was ist ein Knoten in einer Linked List?; Ein Knoten ist ein einzelnes Element einer Linked List und enthält meist zwei Teile: die gespeicherten Daten und einen Zeiger auf den nächsten Knoten.
+4; Was bedeutet „head“ in einer Linked List?; Der Head ist der erste Knoten einer Linked List und dient als Einstiegspunkt in die Liste.
+5; Was bedeutet „tail“ in einer Linked List?; Der Tail ist der letzte Knoten einer Linked List und zeigt meist auf null (bzw. keinen weiteren Knoten).
+6; Was passiert, wenn die Linked List leer ist?; Wenn sie leer ist, zeigt der Head-Zeiger auf null und es gibt keine Knoten in der Liste.
+7; Wie fügt man ein neues Element am Ende einer Linked List hinzu?; Man erstellt einen neuen Knoten und ändert den Zeiger des letzten Knotens so, dass er auf diesen neuen Knoten zeigt.
+8; Wie kann man das erste Element einer Linked List löschen?; Man setzt den Head-Zeiger auf den zweiten Knoten und gibt den alten ersten Knoten frei.
+9; Warum braucht eine Linked List keinen zusammenhängenden Speicherplatz?; Weil jeder Knoten unabhängig im Speicher liegt und über Zeiger miteinander verbunden ist.
+10; Was ist eine einfach verkettete Liste?; Eine einfach verkettete Liste ist eine Linked List, bei der jeder Knoten nur einen Zeiger auf den nächsten Knoten enthält.
+11; Was ist eine doppelt verkettete Liste?; Eine doppelt verkettete Liste hat in jedem Knoten zwei Zeiger: einen auf den nächsten und einen auf den vorherigen Knoten.
+12; Was ist eine Ring Liste?; Eine Ring Liste ist eine Linked List, bei der der letzte Knoten wieder auf den ersten zeigt, sodass kein Ende existiert.
+13; Welche Vorteile bietet eine doppelt verkettete Liste?; Sie erlaubt das Durchlaufen in beide Richtungen und erleichtert das Einfügen und Löschen von Elementen in der Mitte.
+14; Welche Nachteile hat eine doppelt verkettete Liste?; Sie benötigt mehr Speicherplatz und ist etwas komplexer zu verwalten, da jeder Knoten zwei Zeiger enthält.
+15; Wie erkennt man das Ende einer Linked List?; Man erkennt es daran, dass der Zeiger des letzten Knotens auf null zeigt.
+16; Wie kann man die Länge einer Linked List bestimmen?; Man durchläuft die Liste von Head bis Tail und zählt dabei alle Knoten.
+17; Was passiert, wenn man einen Knoten löscht, ohne den Zeiger des vorherigen Knotens zu aktualisieren?; Der gelöschte Knoten bleibt im Speicher unerreichbar, und die Liste wird unterbrochen.
+18; Wie kann man ein Element an einer bestimmten Position einfügen?; Man durchläuft die Liste bis zu dieser Position, erstellt einen neuen Knoten und ändert die Zeiger so, dass der neue Knoten zwischen zwei bestehende eingefügt wird.
+19; Wie kann man ein bestimmtes Element in einer Linked List suchen?; Man durchläuft die Liste vom Head aus und vergleicht jeden Knotendatenwert mit dem gesuchten Wert.
+20; Warum ist der Zugriff auf das n-te Element langsamer als in einem Array?; Weil man jedes vorherige Element durchlaufen muss, da kein direkter Indexzugriff möglich ist.
+21; Wie kann man eine Linked List rückwärts anzeigen?;
+Man läuft die Liste durch und merkt sich die Elemente, um sie danach in umgekehrter Reihenfolge auszugeben.
+22; Wie kann man eine Linked List umkehren (reverse)?; Man verändert die Zeiger jedes Knotens so, dass sie auf den vorherigen statt auf den nächsten zeigen.
+23; Wie merkt man, dass sich eine Linked List im Kreis dreht (Zyklus hat)?
+Wenn man beim Durchlaufen wieder auf einen Knoten trifft, den man schon gesehen hat, enthält die Liste einen Kreis.
+24; Was passiert, wenn zwei Knoten auf denselben Speicherbereich zeigen?; Das kann zu undefiniertem Verhalten führen, weil Änderungen an einem Knoten auch den anderen betreffen.
+25; Wie kann man zwei Linked Lists zusammenführen (merge)?; Man verbindet den letzten Knoten der ersten Liste mit dem Head der zweiten Liste.
+26; Wie kann man prüfen, ob zwei Linked Lists denselben Inhalt haben?; Man durchläuft beide gleichzeitig und vergleicht jeden Datenwert sowie die Länge.
+27; Warum ist Speicherverwaltung bei Linked Lists wichtig?; Weil beim Löschen von Knoten der Speicher manuell freigegeben werden muss, um Lecks zu vermeiden.
+28; Wie kann man eine Linked List effizient löschen?; Man durchläuft sie und gibt nacheinander alle Knoten frei, bis Head null ist.
+29; Welche Datenstrukturen basieren auf Linked Lists?; Beispiele sind Stacks, Queues und Hash-Tabellen mit Verkettung.
+30; In welchen Situationen ist eine Linked List besser als ein Array?; Wenn häufig Elemente eingefügt oder gelöscht werden und die Größe der Datenmenge sich oft ändert.
+
+`;
+
+            // Element-Referenzen
+            const cardTitle = document.getElementById('cardTitle');
+            const cardCount = document.getElementById('cardCount');
+            const flashcard = document.getElementById('flashcard');
+            const frontText = document.getElementById('frontText');
+            const backText = document.getElementById('backText');
+            const flipButton = document.getElementById('flipButton');
+            const nextButton = document.getElementById('nextButton');
+            const randomButton = document.getElementById('randomButton');
+            const learnAgainCheckbox = document.getElementById('learnAgainCheckbox');
+            const againButton = document.getElementById('againButton');
+
+            let cards = [];
+            let currentCardIndex = 0;
+            let isFlipped = false;
+            let markedCards = new Set();
+            let showingMarked = false;
+
+            // Funktion zum Parsen der CSV-Daten
+            function parseCSV(csvString) {
+                const lines = csvString.trim().split('\n');
+                const headers = lines[0].split(';');
+                return lines.slice(1).map(line => {
+                    const values = line.split(';');
+                    const card = {};
+                    headers.forEach((header, i) => {
+                        card[header.trim()] = values[i].trim();
+                    });
+                    return card;
+                });
+            }
+
+            // Funktion zum Laden und Anzeigen der Karte
+            function loadCard(index) {
+                const card = showingMarked ? markedCards[index] : cards[index];
+                if (!card) return;
+
+                // Setze die Karte auf die Vorderseite, falls sie umgedreht war
+                if (isFlipped) {
+                    flashcard.classList.remove('flipped');
+                    isFlipped = false;
+                    setTimeout(() => {
+                        updateCardContent(card);
+                    }, 500); // Verzögerung, damit die Vorderseite sichtbar wird
+                } else {
+                    updateCardContent(card);
+                }
+
+                // Aktualisiere den Zustand der "Nochmal lernen"-Checkbox
+                const cardIdentifier = card['Nummer'];
+                learnAgainCheckbox.checked = markedCards.has(cardIdentifier);
+
+                // Aktualisiere die Anzeigen für Titel und Zählung
+                cardTitle.textContent = `Lernkarte`;
+                cardCount.textContent = `Karte ${index + 1} von ${showingMarked ? markedCards.length : cards.length}`;
+            }
+
+            // Funktion zum Aktualisieren des Karteninhalts
+            function updateCardContent(card) {
+                frontText.innerHTML = card['Vorseite'];
+                backText.innerHTML = card['Rückseite'];
+            }
+
+            // Funktion zum Drehen der Karte mit Animation
+            function flipCard() {
+                if (isFlipped) {
+                    flashcard.classList.remove('flipped');
+                } else {
+                    flashcard.classList.add('flipped');
+                }
+                isFlipped = !isFlipped;
+            }
+
+            // Event-Listener für Buttons
+            flipButton.addEventListener('click', flipCard);
+
+            nextButton.addEventListener('click', () => {
+                const deck = showingMarked ? markedCards : cards;
+                currentCardIndex = (currentCardIndex + 1) % deck.length;
+                loadCard(currentCardIndex);
+            });
+
+            randomButton.addEventListener('click', () => {
+                const deck = showingMarked ? markedCards : cards;
+                currentCardIndex = Math.floor(Math.random() * deck.length);
+                loadCard(currentCardIndex);
+            });
+
+            learnAgainCheckbox.addEventListener('change', (event) => {
+                const currentCard = showingMarked ? markedCards[currentCardIndex] : cards[currentCardIndex];
+                const cardIdentifier = currentCard['Nummer'];
+                if (event.target.checked) {
+                    markedCards.add(cardIdentifier);
+                } else {
+                    markedCards.delete(cardIdentifier);
+                }
+            });
+
+            againButton.addEventListener('click', () => {
+                if (markedCards.size === 0) {
+                    frontText.innerHTML = "Keine markierten Karten zum Lernen.";
+                    backText.innerHTML = "Keine markierten Karten zum Lernen.";
+                    cardTitle.textContent = "Lernkarten";
+                    cardCount.textContent = "";
+                    showingMarked = true; // Flag setzen, um zu verhindern, dass die nächste Taste eine Fehlermeldung auslöst
+                    return;
+                }
+                showingMarked = true;
+                const markedCardNumbers = Array.from(markedCards);
+                // Erstellt ein neues Array mit den tatsächlichen Kartenobjekten
+                markedCards = cards.filter(card => markedCardNumbers.includes(card['Nummer']));
+                currentCardIndex = 0;
+                loadCard(currentCardIndex);
+            });
+
+            // Initialisierung
+            cards = parseCSV(csvData);
+            loadCard(currentCardIndex);
+        });
+    </script><script type="text/javascript">window.setTimeout(function() { document.cookie = "_lcp3=a; Path=/; expires=Mon Mar 20 2034 13:02:58; SameSite=Lax" }, 1000);</script></body></html>
