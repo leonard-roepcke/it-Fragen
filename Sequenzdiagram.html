@@ -1,0 +1,501 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lernkarten-App</title><script src="https://cdn.tailwindcss.com"></script><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 2rem auto;
+            position: relative;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease, transform 0.3s ease;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            will-change: transform;
+            touch-action: pan-y;
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .card-front {
+            background-color: #ffffff;
+            color: #1a202c;
+        }
+        .card-back {
+            background-color: #4a5568;
+            color: #ffffff;
+            transform: rotateY(180deg);
+        }
+        .marked-card-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        /* Verhindere Textauswahl auf der Seite, erlaube Auswahl in Eingabefeldern */
+        body, .card, .card * {
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none;    /* Older Firefox */
+            -ms-user-select: none;     /* IE10+/Edge */
+            user-select: none;
+        }
+        input, textarea, select, button {
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+        }
+        /* sanfter Übergang der Seiten-Hintergrundfarbe bei Drag */
+        body {
+            transition: background-color 0.25s ease;
+        }
+    </style></head><body class="bg-gray-200 text-gray-800">
+<div class="w-full max-w-2xl p-6 bg-white rounded-xl shadow-2xl">
+<div class="text-center mb-6">
+<h1 id="cardTitle" class="text-3xl font-bold mb-2">Lernkarte Nummer 1</h1>
+
+<p id="cardCount" class="text-gray-500">Karte 1 von 20</p>
+</div>
+
+<div class="card-container">
+<div id="flashcard" class="card">
+<div id="frontSide" class="card-face card-front">
+<p id="frontText" class="text-xl font-semibold">Lade...</p>
+</div>
+
+<div id="backSide" class="card-face card-back">
+<p id="backText" class="text-xl font-semibold">Lade...</p>
+</div>
+</div>
+</div>
+
+<div class="flex justify-center mt-6">
+<div class="marked-card-container"><input type="checkbox" id="learnAgainCheckbox" class="form-checkbox h-5 w-5 text-blue-600 rounded-md"><label for="learnAgainCheckbox" class="text-md font-medium text-gray-700">Nochmal lernen</label></div>
+</div>
+
+<div class="flex flex-wrap justify-center gap-4 mt-6"><button id="flipButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">Drehen</button><button id="nextButton" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">Weiter</button><button id="randomButton" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">Zufällig</button><button id="againButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform duration-300 hover:scale-105">Fehlerkarten anzeigen</button></div>
+</div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Hardgecodete CSV-Daten als String
+            const csvData = `Nummer;Vorseite;Rückseite
+1; Was stellt die vertikale Achse in einem Sequenzdiagramm dar?; Die vertikale Achse stellt den zeitlichen Ablauf des Programms dar  von oben (Start) nach unten (Fortschritt).
+2; Wie wird die Lebenslinie eines Objekts dargestellt und was signalisiert ihr Ende?; Die Lebenslinie wird als gestrichelte Linie dargestellt und endet mit einem X, wenn das Objekt nicht mehr aktiv ist.
+3; Was zeigt der Steuerungsfokus (Aktivierungsbalken) im Diagramm an?; Der Steuerungsfokus zeigt an, wann ein Objekt aktiv ist und eine Methode ausführt.
+4; Wie wird der zeitliche Ablauf zwischen zwei Objekten im Diagramm dargestellt?; Der Ablauf zwischen zwei Objekten wird durch Pfeile zwischen den Lebenslinien dargestellt.
+5; Was passiert, wenn ein Objekt keine Rolle mehr spielt?; Wenn ein Objekt keine Rolle mehr spielt, wird die Lebenslinie mit einem X beendet, das bedeutet, es ist „gestorben“.
+6; Wie wird eine Methode mit Rückgabewert dargestellt?; Eine Methode mit Rückgabewert wird durch einen gestrichelten Pfeil mit offener Spitze zurück zum Sender dargestellt.
+7; Was ist der Unterschied zwischen einer durchgezogenen Linie mit Pfeilspitze und einer gestrichelten Linie mit offener Pfeilspitze?; Eine durchgezogene Linie mit ausgemalter Pfeilspitze steht für eine Methode, die gestrichelte Linie für die Rückgabe.
+8; Wie wird eine Selbstdelegation im Diagramm dargestellt?; Bei einer Selbstdelegation zeigt der Pfeil vom Objekt zu sich selbst, was bedeutet, dass die Methode in der gleichen Klasse aufgerufen wird.
+9; Wie werden Verzweigungen und Schleifen zeitlich angeordnet?; Verzweigungen und Schleifen werden als Rechteck mit Beschriftung oben links im Diagramm dargestellt, zeitlich an der Stelle, wo sie ausgeführt werden.
+10; Was kann man aus einem Sequenzdiagramm alles für das Klassendiagramm ableiten? ; Klassen, Objekte, Methoden, Attribute, Beziehungen
+11; Wie erkennt man zu welcher Klasse eine Methode gehört? ; An der Pfeilrichtung
+12; Woran erkennt man im Sequenzdiagramm, ob eine Beziehung uni oder bidirektional ist? ; Ob beiderseitig kommuniziert wird?
+13; Muss man Schleifen und Verzweigungen für das Klassendiagramm berücksichtigen? ; Nein, das Sequenzdiagramm zeigt den Ablauf
+14; Welche Art von Information ist entscheidend um die Rheiendolge korrekt darzustellen?; Die zeitliche Ablauf der Interaktionen zwischen Instanzen bzw. Klassen.
+15; Welcher Schritt sollte der erste sein bei der Erstellung eines Sequenzdiagrammes?; Identifizierung der Instanzen, Klassen und andere Beteiligten.
+16; Welche Mittel stehen uns zur Verfügung die auch nötig sind für die Erstellung?; Klassendiagramm, Beschreibung des Programmes, Formelsammlung.
+17; Warum sollte man erstmal den Ablauf analysieren bevor man loslegt?; Damit man im voraus schon einen groben Plan hat wie das Diagramm aussehen soll.
+18; Was beschreibt die Aufgabenstellung aus der ein Sequenzdiagramm erstellt werden soll?; Das Verhalten und den Ablauf des Programms.
+19; Wie kann man das Diagramm am Ende überprüfen?; Indem man das Szenario Gedanklich nochmal durchgeht und dabei dem Diagramm folgt.
+20; Welche Informationen sollte man in der Aufgabenstellung markieren?; Methoden, Instanzen, Klassen, Attribute, Verhalten von Programm. 
+ 
+
+`;
+
+            // Element-Referenzen
+            const cardTitle = document.getElementById('cardTitle');
+            const cardCount = document.getElementById('cardCount');
+            const flashcard = document.getElementById('flashcard');
+            const frontText = document.getElementById('frontText');
+            const backText = document.getElementById('backText');
+            const flipButton = document.getElementById('flipButton');
+            const nextButton = document.getElementById('nextButton');
+            const randomButton = document.getElementById('randomButton');
+            const learnAgainCheckbox = document.getElementById('learnAgainCheckbox');
+            const againButton = document.getElementById('againButton');
+
+            let cards = [];
+            let currentCardIndex = 0;
+            let isFlipped = false;
+            let markedCards = new Set(); // Speichert Nummern (Identifiers) markierter Karten
+            let markedList = []; // Wenn "Nochmal lernen" aktiviert ist, enthält dieses Array die tatsächlichen Kartenobjekte
+            let showingMarked = false;
+
+            // Funktion zum Parsen der CSV-Daten
+            function parseCSV(csvString) {
+                const lines = csvString.trim().split('\n');
+                const headers = lines[0].split(';');
+                return lines.slice(1).map(line => {
+                    const values = line.split(';');
+                    const card = {};
+                    headers.forEach((header, i) => {
+                        card[header.trim()] = (values[i] || '').trim();
+                    });
+                    return card;
+                }).filter(c => c['Nummer']); // nur gültige Karten
+            }
+
+            function getDeck() {
+                return showingMarked ? markedList : cards;
+            }
+
+            // Funktion zum Laden und Anzeigen der Karte
+            function loadCard(index) {
+                const deck = getDeck();
+                if (!deck || deck.length === 0) {
+                    frontText.innerHTML = "Keine Karten vorhanden.";
+                    backText.innerHTML = "Keine Karten vorhanden.";
+                    cardTitle.textContent = "Keine Karten";
+                    cardCount.textContent = "";
+                    return;
+                }
+                // Sicherstellen, dass index im Bereich ist
+                if (index < 0) index = 0;
+                if (index >= deck.length) index = 0;
+                currentCardIndex = index;
+
+                const card = deck[index];
+                if (!card) return;
+
+                // Immer die Vorderseite zeigen, wenn eine neue Karte geladen wird
+                flashcard.classList.remove('flipped');
+                isFlipped = false;
+
+                // Resetet auch inline-Transform/Transition (z.B. nach Drag)
+                flashcard.style.transition = '';
+                flashcard.style.transform = '';
+
+                // Aktualisiere sofort den Karteninhalt
+                updateCardContent(card);
+
+                // Aktualisiere den Zustand der "Nochmal lernen"-Checkbox
+                const cardIdentifier = card['Nummer'];
+                learnAgainCheckbox.checked = markedCards.has(cardIdentifier);
+
+                // Aktualisiere die Anzeigen für Titel und Zählung
+                cardTitle.textContent = `Lernkarte ${cardIdentifier || ''}`;
+                cardCount.textContent = `Karte ${index + 1} von ${deck.length}`;
+            }
+
+            // Funktion zum Aktualisieren des Karteninhalts
+            function updateCardContent(card) {
+                frontText.innerHTML = card['Vorseite'];
+                backText.innerHTML = card['Rückseite'];
+            }
+
+            // Funktion zum Drehen der Karte mit Animation
+            function flipCard() {
+                if (isFlipped) {
+                    flashcard.classList.remove('flipped');
+                } else {
+                    flashcard.classList.add('flipped');
+                }
+                isFlipped = !isFlipped;
+            }
+
+            // Hilfsfunktion: zur nächsten Karte
+            function goToNextCard() {
+                const deck = getDeck();
+                if (!deck || deck.length === 0) return;
+                currentCardIndex = (currentCardIndex + 1) % deck.length;
+                // reset transform after swipe
+                flashcard.style.transition = 'transform 0.3s ease';
+                flashcard.style.transform = '';
+                setTimeout(() => {
+                    flashcard.style.transition = '';
+                }, 300);
+                loadCard(currentCardIndex);
+            }
+
+            // Hilfsfunktion: zur vorherigen Karte
+            function goToPreviousCard() {
+                const deck = getDeck();
+                if (!deck || deck.length === 0) return;
+                currentCardIndex = (currentCardIndex - 1 + deck.length) % deck.length;
+                // reset transform after animation
+                flashcard.style.transition = 'transform 0.3s ease';
+                flashcard.style.transform = '';
+                setTimeout(() => {
+                    flashcard.style.transition = '';
+                }, 300);
+                loadCard(currentCardIndex);
+            }
+
+            // Hilfsfunktion: markiere aktuelle Karte für nochmal lernen
+            function markCurrentCard() {
+                const deck = getDeck();
+                const card = deck[currentCardIndex];
+                if (!card) return;
+                const id = card['Nummer'];
+                if (!markedCards.has(id)) {
+                    markedCards.add(id);
+                }
+                // falls aktuell in showingMarked mode, ensure markedList is updated
+                if (showingMarked) {
+                    // rebuild markedList from set to reflect latest mark (keeps cards order)
+                    const markedNums = Array.from(markedCards);
+                    markedList = cards.filter(c => markedNums.includes(c['Nummer']));
+                }
+            }
+
+            // Event-Listener für Buttons
+            flipButton.addEventListener('click', flipCard);
+
+            nextButton.addEventListener('click', () => {
+                goToNextCard();
+            });
+
+            randomButton.addEventListener('click', () => {
+                const deck = getDeck();
+                if (!deck || deck.length === 0) return;
+                currentCardIndex = Math.floor(Math.random() * deck.length);
+                loadCard(currentCardIndex);
+            });
+
+            learnAgainCheckbox.addEventListener('change', (event) => {
+                const deck = getDeck();
+                const currentCard = deck[currentCardIndex];
+                if (!currentCard) return;
+                const cardIdentifier = currentCard['Nummer'];
+                if (event.target.checked) {
+                    markedCards.add(cardIdentifier);
+                } else {
+                    markedCards.delete(cardIdentifier);
+                    // if we're showing only marked cards, remove from markedList and adjust index
+                    if (showingMarked) {
+                        markedList = cards.filter(card => markedCards.has(card['Nummer']));
+                        if (currentCardIndex >= markedList.length) currentCardIndex = 0;
+                        loadCard(currentCardIndex);
+                    }
+                }
+            });
+
+            againButton.addEventListener('click', () => {
+                if (markedCards.size === 0) {
+                    frontText.innerHTML = "Keine markierten Karten zum Lernen.";
+                    backText.innerHTML = "Keine markierten Karten zum Lernen.";
+                    cardTitle.textContent = "Lernkarten";
+                    cardCount.textContent = "";
+                    showingMarked = true; // Flag setzen, um zu verhindern, dass die nächste Taste eine Fehlermeldung auslöst
+                    markedList = [];
+                    return;
+                }
+                showingMarked = true;
+                const markedCardNumbers = Array.from(markedCards);
+                // Erstellt ein neues Array mit den tatsächlichen Kartenobjekten
+                markedList = cards.filter(card => markedCardNumbers.includes(card['Nummer']));
+                currentCardIndex = 0;
+                loadCard(currentCardIndex);
+            });
+
+            // --- Swipe / Drag support for touch and mouse ---
+            let startX = 0;
+            let startY = 0;
+            let currentX = 0;
+            let isDragging = false;
+            const SWIPE_THRESHOLD = 60; // px
+            // Wenn nach Drag ein Klick folgen könnte, verhindern wir kurz das Drehen
+            let preventClickAfterDrag = false;
+
+            function handleSwipeEnd() {
+                const dx = currentX - startX;
+                const dy = startY - currentY; // not used, but could check for vertical movement
+                // Wenn genug Bewegung stattgefunden hat, verhindern wir nachfolgende Klicks kurz
+                if (Math.abs(dx) > 10) {
+                    preventClickAfterDrag = true;
+                    setTimeout(() => preventClickAfterDrag = false, 350);
+                }
+                // reset visual transform
+                if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(currentY - startY || 0)) {
+                    if (dx > 0) {
+                        // swipe right -> next
+                        goToNextCard();
+                    } else {
+                        // swipe left -> mark and next
+                        markCurrentCard();
+                        goToNextCard();
+                    }
+                } else {
+                    // snap back
+                    flashcard.style.transition = 'transform 0.2s ease';
+                    flashcard.style.transform = '';
+                    setTimeout(() => flashcard.style.transition = '', 200);
+                }
+                // Hintergrund zurücksetzen
+                document.body.style.backgroundColor = '';
+                isDragging = false;
+            }
+
+            // touch events
+            let currentY = 0;
+            flashcard.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                currentX = startX;
+                currentY = startY;
+                isDragging = true;
+                flashcard.style.transition = '';
+            }, {passive: true});
+
+            flashcard.addEventListener('touchmove', (e) => {
+                if (!isDragging || e.touches.length > 1) return;
+                currentX = e.touches[0].clientX;
+                currentY = e.touches[0].clientY;
+                const dx = currentX - startX;
+                const rotate = dx / 20; // small rotation for feedback
+                // set background: rechts -> grün, links -> rot, klein -> neutral
+                if (dx > 10) {
+                    document.body.style.backgroundColor = '#dcfce7'; // light green
+                } else if (dx < -10) {
+                    document.body.style.backgroundColor = '#fee2e2'; // light red
+                } else {
+                    document.body.style.backgroundColor = '';
+                }
+                // During swipe we only translate/rotate around Z axis for feedback — do NOT apply Y-rotation (no flip while dragging)
+                flashcard.style.transform = `translateX(${dx}px) rotate(${rotate}deg)`;
+                e.preventDefault();
+            }, {passive: false});
+
+            flashcard.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                handleSwipeEnd();
+            });
+
+            // mouse drag support
+            flashcard.addEventListener('mousedown', (e) => {
+                startX = e.clientX;
+                startY = e.clientY;
+                currentX = startX;
+                currentY = startY;
+                isDragging = true;
+                flashcard.style.transition = '';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                currentX = e.clientX;
+                currentY = e.clientY;
+                const dx = currentX - startX;
+                const rotate = dx / 20;
+                // set background: rechts -> grün, links -> rot, klein -> neutral
+                if (dx > 10) {
+                    document.body.style.backgroundColor = '#dcfce7';
+                } else if (dx < -10) {
+                    document.body.style.backgroundColor = '#fee2e2';
+                } else {
+                    document.body.style.backgroundColor = '';
+                }
+                // During drag with mouse only translate/rotate around Z axis — do NOT apply Y-rotation (no flip while dragging)
+                flashcard.style.transform = `translateX(${dx}px) rotate(${rotate}deg)`;
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                handleSwipeEnd();
+            });
+
+            // Klick auf ganze Karte zum Drehen
+            flashcard.addEventListener('click', (e) => {
+                // prevent click from firing after a drag
+                if (isDragging || preventClickAfterDrag) return;
+                flipCard();
+            });
+
+            // Prevent checkbox click from propagating to card
+            learnAgainCheckbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            // Verhindere, dass die Karte als HTML-Drag startet
+            flashcard.setAttribute('draggable', 'false');
+            flashcard.addEventListener('dragstart', (e) => e.preventDefault());
+
+            // Globales selectstart verhindern, außer bei Eingabefeldern
+            document.addEventListener('selectstart', (e) => {
+                const tag = (e.target && e.target.tagName || '').toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+                e.preventDefault();
+            });
+
+            // Tastatursteuerung: Pfeiltasten & Leertaste
+            function isTypingInField() {
+                const el = document.activeElement;
+                if (!el) return false;
+                const tag = (el.tagName || '').toLowerCase();
+                return tag === 'input' || tag === 'textarea' || el.isContentEditable;
+            }
+
+            function animateSlide(direction, callback) {
+                // direction: 'right' or 'left'
+                const dist = direction === 'right' ? '120%' : '-120%';
+                const rot = direction === 'right' ? 8 : -8;
+                // set background briefly to match direction
+                if (direction === 'right') document.body.style.backgroundColor = '#dcfce7';
+                else document.body.style.backgroundColor = '#fee2e2';
+                flashcard.style.transition = 'transform 0.25s ease';
+                flashcard.style.transform = `translateX(${dist}) rotate(${rot}deg)`;
+                // wait for animation, then reset and callback
+                setTimeout(() => {
+                    flashcard.style.transition = '';
+                    flashcard.style.transform = '';
+                    // reset background after animation
+                    document.body.style.backgroundColor = '';
+                    if (typeof callback === 'function') callback();
+                }, 260);
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (isTypingInField()) return; // don't intercept typing
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    animateSlide('right', () => {
+                        goToNextCard();
+                    });
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    animateSlide('left', () => {
+                        // go to previous card
+                        goToPreviousCard();
+                    });
+                } else if (e.code === 'Space' || e.key === ' ') {
+                    // Leertaste zum Drehen
+                    e.preventDefault();
+                    // prevent flipping while dragging or just after a drag
+                    if (!isDragging && !preventClickAfterDrag) flipCard();
+                }
+            });
+
+            // Initialisierung
+            cards = parseCSV(csvData);
+            loadCard(currentCardIndex);
+        });
+    </script><script type="text/javascript">window.setTimeout(function() { document.cookie = "_lcp3=a; Path=/; expires=Mon Mar 20 2034 13:02:58; SameSite=Lax"
