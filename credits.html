@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credits</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .credits-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .credit-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .credit-section:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .credit-role {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .credit-person {
+            color: #333;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .credit-description {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            .credits-container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="credits-container">
+        <h1>Credits</h1>
+        <div id="credits-list"></div>
+    </div>
+
+    <script>
+        // Hier einfach neue Einträge hinzufügen
+        const credits = [
+            {
+                person: "Herr.von Detten",
+                role: "Konzept & Basis-Logik",
+                description: "Die Idee und die Basis-Logik"
+            },
+            {
+                person: "Leonard Röpcke",
+                role: "Entwicklung & Integration",
+                description: "Die ganze zusammengeführte App mit Drag and Drop"
+            },
+            {
+                person: "Lukas",
+                role: "algemeine OOP Fragen",
+                description: "Fragen zun Thema"
+            },
+            {
+                person: "Katalin",
+                role: "UML Objektdiagramme",
+                description: "Fragen zum Thema"
+            },
+        ];
+
+        // Automatische Generierung der Credits
+        function generateCredits() {
+            const container = document.getElementById('credits-list');
+            
+            credits.forEach(credit => {
+                const section = document.createElement('div');
+                section.className = 'credit-section';
+                
+                section.innerHTML = `
+                    <div class="credit-role">${credit.role}</div>
+                    <div class="credit-person">${credit.person}</div>
+                    <div class="credit-description">${credit.description}</div>
+                `;
+                
+                container.appendChild(section);
+            });
+        }
+
+        // Credits beim Laden der Seite generieren
+        generateCredits();
+    </script>
+</body>
+</html>
